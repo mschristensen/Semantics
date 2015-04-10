@@ -92,20 +92,34 @@ s_ds' (Ass x a) e s = update s (a_val a (lookup e s)) (e x)
 s_ds' Skip e s = id
 s_ds' (Comp ss1 ss2) e s = ((s_ds' ss2 e) . (s_ds' ss1 e)) s
 s_ds' (If b ss1 ss2) e s = cond ((b_val b).(lookup e), s_ds' ss1 e, s_ds' ss2 e) s  {- WHY s ON THE END? -}
-s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id)
+s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id) {- WHY id ON THE END? -}
 
-{-(a_val a (lookup e s)) x-}
 {-
-s_ds (Ass x a) s =	update s (a_val a s) x
-                            where
-                            update s v x y = case x of
-                                                    y -> v
-                                                    _ -> s y
-s_ds Skip s = id s
-s_ds (Comp ss1 ss2) s = ((s_ds ss2) . (s_ds ss1)) s
-s_ds (If b ss1 ss2) s = cond (b_val b, s_ds ss1, s_ds ss2) s
-s_ds (While b ss) s = fix ff s where ff g = cond(b_val b, g . s_ds ss, id)
+    DecV is a list of (Var, Aexp) tuples, describing the current 'state' of vars,
+    that is, the current variable environment and the current store. These need to be
+    updated when a new block with local declarations is entered.
+    
+    Input
+    (x,a):xs        (x,a) is the first (Var,Aexp) tuple in DecV (at the head).
+    (e,s)           is the current var env and store.
+    
+    Output          The updated var env and store after all declarations.
+                    Strategy: Recursively call d_v_ds until the list is empty.
+    update e l x
+    ===> Update the var env (e) so that on receiving x the elem in the store pointed to by 'next' is returned
+    
+    update (update s (new l) next) v l
+    ===> update the store (s) so that on receiving 'next' a new location is returned
+    ^^ DOUBLE UPDATED WTF?
+    
 -}
+d_v_ds :: DecV -> (EnvV, Store) -> (EnvV, Store)
+d_v_ds ((x,a):xs) (e,s) = d_v_ds xs (update e l x, update (update s (new l) next) v l)
+    where   l = s next
+            v = a_val a (lookup e s)
+d_v_ds [] (e,s) = id (e,s)
+
+
 
 {-s :: Stm
 s = begin var x:=7; proc p is x:=0; begin var x:=5; call p end end-}
