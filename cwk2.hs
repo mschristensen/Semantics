@@ -106,7 +106,9 @@ s_ds (Block dv dp ss) ev ep s = s_ds ss ev'  ep' s'
             ep' = d_p_ds dp ev' ep
 s_ds (Call p) ev ep s = ep p s
 
-{-TODO: BEGIN AND CALL -}
+t :: Store
+t 0 = 1     {- Should be t next = 1  ? -}
+t _ = undefined
 
 {-
     DecV is a list of (Var, Aexp) tuples, describing the current 'state' of vars,
