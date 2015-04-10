@@ -94,6 +94,15 @@ s_ds' (Comp ss1 ss2) e s = ((s_ds' ss2 e) . (s_ds' ss1 e)) s
 s_ds' (If b ss1 ss2) e s = cond ((b_val b).(lookup e), s_ds' ss1 e, s_ds' ss2 e) s  {- WHY s ON THE END? -}
 s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id) {- WHY id ON THE END? -}
 
+s_ds :: Stm -> EnvV -> EnvP -> Store -> Store
+s_ds (Ass x a) ev ep s = update s (a_val a (lookup ev s)) l
+    where l = ev x
+s_ds Skip ev ep s = id
+s_ds (Comp ss1 ss2) ev ep s = ((s_ds ss2 ev ep) . (s_ds ss1 ev ep)) s
+s_ds (If b ss1 ss2) ev ep s = cond ((b_val b).(lookup ev), s_ds ss1 ev ep, s_ds ss2 ev ep) s
+s_ds (While b ss) ev ep s = fix ff s where ff g = cond((b_val b).(lookup ev), g.(s_ds ss ev ep), id)
+{-TODO: BEGIN AND CALL -}
+
 {-
     DecV is a list of (Var, Aexp) tuples, describing the current 'state' of vars,
     that is, the current variable environment and the current store. These need to be
@@ -119,6 +128,19 @@ d_v_ds ((x,a):xs) (e,s) = d_v_ds xs (update e l x, update (update s (new l) next
             v = a_val a (lookup e s)
 d_v_ds [] (e,s) = id (e,s)
 
+{-
+    type EnvP = Pname -> Store -> Store
+    ===>    EnvP associates each procedure with the 'effect' of its execution, i.e. the change
+            in the state of the variables.
+    
+    d_p_ds accepts the current var env and proc env in order to update the proc env.
+
+    DecP is a list of (Pname,Stm) tuples, describing the current set of procedures by
+    their names and the statements the
+-}
+d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
+d_p_ds ((p,stm):xs) ev ep = d_p_ds xs ev (update ep g p)
+    where g = s_ds stm ev ep
 
 
 {-s :: Stm
