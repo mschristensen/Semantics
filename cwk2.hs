@@ -101,6 +101,11 @@ s_ds Skip ev ep s = id
 s_ds (Comp ss1 ss2) ev ep s = ((s_ds ss2 ev ep) . (s_ds ss1 ev ep)) s
 s_ds (If b ss1 ss2) ev ep s = cond ((b_val b).(lookup ev), s_ds ss1 ev ep, s_ds ss2 ev ep) s
 s_ds (While b ss) ev ep s = fix ff s where ff g = cond((b_val b).(lookup ev), g.(s_ds ss ev ep), id)
+s_ds (Block dv dp ss) ev ep s = s_ds ss ev'  ep' s'
+    where   (ev', s') = d_v_ds dv (ev, s)
+            ep' = d_p_ds dp ev' ep
+s_ds (Call p) ev ep s = ep p s
+
 {-TODO: BEGIN AND CALL -}
 
 {-
