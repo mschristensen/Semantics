@@ -90,6 +90,7 @@ cond (p, g1, g2) s = if p s then g1 s else g2 s
 s_ds' :: Stm -> EnvV -> Store -> Store
 s_ds' (Ass x a) e s = update s (a_val a (lookup e s)) (e x)
 s_ds' Skip e s = id
+s_ds' (Comp ss1 ss2) e s = ((s_ds' ss2 e) . (s_ds' ss1 e)) s
 s_ds' (If b ss1 ss2) e s = cond ((b_val b).(lookup e), s_ds' ss1 e, s_ds' ss2 e) s  {- WHY s ON THE END? -}
 s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id)
 
