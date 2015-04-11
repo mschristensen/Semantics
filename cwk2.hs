@@ -2,6 +2,11 @@
 -- Denotational Semantics
 -- CWK2
 
+{- Export for testing purposes -}
+module CWK2
+(   module CWK2
+) where
+
 import Prelude hiding (lookup)
 
 -- Type Definitions (Given)
@@ -46,39 +51,34 @@ b_val (And b1 b2) s = (b_val b1 s) && (b_val b2 s)
 fix :: (a -> a) -> a
 fix ff = ff (fix ff)
 
--- Semantic Functions (To Do)
+fac :: Integer -> Integer
+fac x
+    | x == 0 = 1
+    | otherwise = x * (fac (x - 1))
 
-{-
-new :: Loc -> Loc
-lookup :: EnvV -> Store -> State
-update :: Eq a => (a->b) -> b -> a -> (a->b)
-s_ds' :: Stm -> EnvV -> Store -> Store
-d_v_ds :: DecV -> (EnvV, Store) -> (EnvV, Store)	
-d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
-s_ds :: Stm -> EnvV -> EnvP -> Store -> Store
--}
+    
+-- Semantic Functions (New)
 
 {- TEST FUNCTIONs -}
 
 ev :: EnvV
 ev "x" = 1
+ev "y" = 2
+ev "z" = 3
 ev _ = 0
 
-q :: Store
-q x 
-    | x == 0 = 2
-    | x == 1 = 0
-    | otherwise = undefined
-    
 s :: Stm
-s = (Block ([("x",N 7)]) ([("p",Ass "x" (N 7))]) (Block ([("x",N 5)]) ([]) (Call "p")))
+s = Comp (Ass "x" (N 365)) (Ass "y" (N 3))
+{-s = (Block ([("x",N 7)]) ([("p",Ass "x" (N 7))]) (Block ([("x",N 5)]) ([]) (Call "p")))-}
 
 t :: Store
-t 0 = 1     {- Should be t next = 1  ? -}
+t 1 = 10
+t 2 = 11
+t 3 = 12
 t _ = undefined
 
-{-n :: Int-}
-{-TODO : implement n to returnnumber of defined locations in "s_ds s undefined undefined t"-}
+n :: Integer -> Integer
+n x = (s_ds s undefined undefined t) x
 
 {-END TEST FUNCTIONS -}
     
@@ -89,10 +89,12 @@ lookup :: EnvV -> Store -> State
 lookup e s = s.e
 
 update :: Eq a => (a->b) -> b -> a -> (a->b)
-update f v x = g where g x = v
+update f v x = g where g y = if x == y then v else f y
 
 cond :: (a->T, a->a, a->a) -> (a->a)
 cond (p, g1, g2) s = if p s then g1 s else g2 s
+
+
 
 s_ds' :: Stm -> EnvV -> Store -> Store
 s_ds' (Ass x a) e s = update s (a_val a (lookup e s)) (e x)
@@ -100,6 +102,8 @@ s_ds' Skip e s = id
 s_ds' (Comp ss1 ss2) e s = ((s_ds' ss2 e) . (s_ds' ss1 e)) s
 s_ds' (If b ss1 ss2) e s = cond ((b_val b).(lookup e), s_ds' ss1 e, s_ds' ss2 e) s  {- WHY s ON THE END? -}
 s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id) {- WHY id ON THE END? -}
+
+
 
 s_ds :: Stm -> EnvV -> EnvP -> Store -> Store
 s_ds (Ass x a) ev ep s = update s (a_val a (lookup ev s)) l
@@ -113,41 +117,16 @@ s_ds (Block dv dp ss) ev ep s = s_ds ss ev'  ep' s'
             ep' = d_p_ds dp ev' ep
 s_ds (Call p) ev ep s = ep p s
 
-{-
-    DecV is a list of (Var, Aexp) tuples, describing the current 'state' of vars,
-    that is, the current variable environment and the current store. These need to be
-    updated when a new block with local declarations is entered.
-    
-    Input
-    (x,a):xs        (x,a) is the first (Var,Aexp) tuple in DecV (at the head).
-    (e,s)           is the current var env and store.
-    
-    Output          The updated var env and store after all declarations.
-                    Strategy: Recursively call d_v_ds until the list is empty.
-    update e l x
-    ===> Update the var env (e) so that on receiving x the elem in the store pointed to by 'next' is returned
-    
-    update (update s (new l) next) v l
-    ===> update the store (s) so that on receiving 'next' a new location is returned
-    ^^ DOUBLE UPDATED WTF?
-    
--}
+
+
 d_v_ds :: DecV -> (EnvV, Store) -> (EnvV, Store)
 d_v_ds ((x,a):xs) (e,s) = d_v_ds xs (update e l x, update (update s (new l) next) v l)
     where   l = s next
             v = a_val a (lookup e s)
 d_v_ds [] (e,s) = id (e,s)
 
-{-
-    type EnvP = Pname -> Store -> Store
-    ===>    EnvP associates each procedure with the 'effect' of its execution, i.e. the change
-            in the state of the variables.
-    
-    d_p_ds accepts the current var env and proc env in order to update the proc env.
 
-    DecP is a list of (Pname,Stm) tuples, describing the current set of procedures by
-    their names and the statements the
--}
+
 d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
 d_p_ds ((p,stm):xs) ev ep = d_p_ds xs ev (update ep g p)
     where g = s_ds stm ev ep
