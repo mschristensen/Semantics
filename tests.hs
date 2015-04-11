@@ -63,6 +63,20 @@ test17 = (s_ds' (If b_t ss1 ss2) ev t) 2    {- 11 -}
 
 test18 = (s_ds' (While b_1 ss4) ev t) 1     {- 21 -}
 
+test19 = (s_ds ss1 ev undefined t) 1
+test20 = (s_ds ss1 ev undefined t) 2                 {- 11 -}
+test21 = (s_ds Skip ev undefined t) 1                {- 1 -}
+
+test22 = (s_ds ss3 ev undefined t) 1                 {- 9 -}
+test23 = (s_ds ss3 ev undefined t) 2                 {- 8 -}
+
+test24 = (s_ds (If b_f ss1 ss2) ev undefined t) 1    {- 10 -}
+test25 = (s_ds (If b_f ss1 ss2) ev undefined t) 2    {- 8 -}
+test26 = (s_ds (If b_t ss1 ss2) ev undefined t) 1    {- 9 -}
+test27 = (s_ds (If b_t ss1 ss2) ev undefined t) 2    {- 11 -}
+
+test28 = (s_ds (While b_1 ss4) ev undefined t) 1     {- 21 -}
+
 
 main = do
     print $ test1
@@ -83,3 +97,13 @@ main = do
     print $ test16
     print $ test17
     print $ test18
+    print $ test19
+    print $ test20
+    print $ test21
+    print $ test22
+    print $ test23
+    print $ test24
+    print $ test25
+    print $ test26
+    print $ test27
+    print $ test28

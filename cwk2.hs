@@ -78,7 +78,7 @@ t 3 = 12
 t _ = undefined
 
 n :: Integer -> Integer
-n x = (s_ds s undefined undefined t) x
+n x = (s_ds s ev undefined t) x
 
 {-END TEST FUNCTIONS -}
     
