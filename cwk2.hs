@@ -69,10 +69,18 @@ q x
     | x == 0 = 2
     | x == 1 = 0
     | otherwise = undefined
+    
+s :: Stm
+s = (Block ([("x",N 7)]) ([("p",Ass "x" (N 7))]) (Block ([("x",N 5)]) ([]) (Call "p")))
+
+t :: Store
+t 0 = 1     {- Should be t next = 1  ? -}
+t _ = undefined
+
+{-n :: Int-}
+{-TODO : implement n to returnnumber of defined locations in "s_ds s undefined undefined t"-}
 
 {-END TEST FUNCTIONS -}
-    
-    
     
 new :: Loc -> Loc
 new x = succ x
@@ -82,7 +90,6 @@ lookup e s = s.e
 
 update :: Eq a => (a->b) -> b -> a -> (a->b)
 update f v x = g where g x = v
-
 
 cond :: (a->T, a->a, a->a) -> (a->a)
 cond (p, g1, g2) s = if p s then g1 s else g2 s
@@ -105,10 +112,6 @@ s_ds (Block dv dp ss) ev ep s = s_ds ss ev'  ep' s'
     where   (ev', s') = d_v_ds dv (ev, s)
             ep' = d_p_ds dp ev' ep
 s_ds (Call p) ev ep s = ep p s
-
-t :: Store
-t 0 = 1     {- Should be t next = 1  ? -}
-t _ = undefined
 
 {-
     DecV is a list of (Var, Aexp) tuples, describing the current 'state' of vars,
@@ -148,10 +151,7 @@ d_v_ds [] (e,s) = id (e,s)
 d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
 d_p_ds ((p,stm):xs) ev ep = d_p_ds xs ev (update ep g p)
     where g = s_ds stm ev ep
-
-
-{-s :: Stm
-s = begin var x:=7; proc p is x:=0; begin var x:=5; call p end end-}
+d_p_ds [] ev ep = id ep
 
 
 
