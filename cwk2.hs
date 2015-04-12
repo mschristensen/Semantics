@@ -59,28 +59,25 @@ fac x
     
 -- Semantic Functions (New)
 
-{- TEST FUNCTIONs -}
-
-ev :: EnvV
-ev "x" = 1
-ev "y" = 2
-ev "z" = 3
-ev _ = 0
+{- UTIL FUNCTIONs -}
 
 s :: Stm
-s = Comp (Ass "x" (N 365)) (Ass "y" (N 3))
-{-s = (Block ([("x",N 7)]) ([("p",Ass "x" (N 7))]) (Block ([("x",N 5)]) ([]) (Call "p")))-}
+s = (Block ([("x",N 7)]) ([("p",Ass "x" (N 0))]) (Block ([("x",N 5)]) ([]) (Call "p")))
 
 t :: Store
-t 1 = 10
-t 2 = 11
-t 3 = 12
+t 0 = 1
 t _ = undefined
 
-n :: Integer -> Integer
-n x = (s_ds s ev undefined t) x
+n :: Integer
+n = ((s_ds s undefined undefined t) 0) - 1
 
-{-END TEST FUNCTIONS -}
+f :: DecP
+f = [("fac", Block [("z", (V "x"))] [] (If (Eq (V "x") (N 1)) (Skip) (Comp (Ass "x" (Sub (V "x") (N 1))) (Comp (Call "fac") (Ass "y" (Mult (V "z") (V "y")))))))]
+
+g :: Stm
+g = Block [("x", (N 5)), ("y", (N 1))] f (Call "fac")
+
+{-END UTIL FUNCTIONS -}
     
 new :: Loc -> Loc
 new x = succ x
@@ -98,7 +95,7 @@ cond (p, g1, g2) s = if p s then g1 s else g2 s
 
 s_ds' :: Stm -> EnvV -> Store -> Store
 s_ds' (Ass x a) e s = update s (a_val a (lookup e s)) (e x)
-s_ds' Skip e s = id
+s_ds' Skip e s = s
 s_ds' (Comp ss1 ss2) e s = ((s_ds' ss2 e) . (s_ds' ss1 e)) s
 s_ds' (If b ss1 ss2) e s = cond ((b_val b).(lookup e), s_ds' ss1 e, s_ds' ss2 e) s  {- WHY s ON THE END? -}
 s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s_ds' ss e), id) {- WHY id ON THE END? -}
@@ -108,11 +105,11 @@ s_ds' (While b ss) e s = fix ff s where ff g = cond((b_val b).(lookup e), g . (s
 s_ds :: Stm -> EnvV -> EnvP -> Store -> Store
 s_ds (Ass x a) ev ep s = update s (a_val a (lookup ev s)) l
     where l = ev x
-s_ds Skip ev ep s = id
+s_ds Skip ev ep s = s
 s_ds (Comp ss1 ss2) ev ep s = ((s_ds ss2 ev ep) . (s_ds ss1 ev ep)) s
 s_ds (If b ss1 ss2) ev ep s = cond ((b_val b).(lookup ev), s_ds ss1 ev ep, s_ds ss2 ev ep) s
 s_ds (While b ss) ev ep s = fix ff s where ff g = cond((b_val b).(lookup ev), g.(s_ds ss ev ep), id)
-s_ds (Block dv dp ss) ev ep s = s_ds ss ev'  ep' s'
+s_ds (Block dv dp ss) ev ep s = s_ds ss ev' ep' s'
     where   (ev', s') = d_v_ds dv (ev, s)
             ep' = d_p_ds dp ev' ep
 s_ds (Call p) ev ep s = ep p s
@@ -126,35 +123,19 @@ d_v_ds ((x,a):xs) (e,s) = d_v_ds xs (update e l x, update (update s (new l) next
 d_v_ds [] (e,s) = id (e,s)
 
 
+{- 
+
+{- Version of d_p_ds for *non-recursive* procedures, (part h). -}
 
 d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
 d_p_ds ((p,stm):xs) ev ep = d_p_ds xs ev (update ep g p)
     where g = s_ds stm ev ep
 d_p_ds [] ev ep = id ep
+-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+{- Version of d_p_ds for recursive procedures (part l) -}
+d_p_ds :: DecP -> EnvV -> EnvP -> EnvP	
+d_p_ds ((p,stm):xs) ev ep = d_p_ds xs ev (update ep (fix ff) p)
+    where ff g = s_ds stm ev (update ep g p)
+d_p_ds [] ev ep = id ep
 
