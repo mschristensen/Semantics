@@ -1,2 +1,2 @@
-# LECW2
-Language Engineering COMS22201 Coursework 2  - Semantics with Haskell
+# Semantics in Haskell
+This program validates the semantics of a simple high level programming language.
